@@ -6,16 +6,21 @@ from datetime import datetime
 import os
 
 app = Flask(__name__)
+
+# Tesseract path for Windows only
+if os.name == "nt":
+    pytesseract.pytesseract.tesseract_cmd = (
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    )
+
 DEFAULT_WORK_SECONDS = 8 * 60 * 60
 
 # Automatically find common Windows Tesseract installations.
-for path in (
-    r"C:\Program Files\Tesseract-OCR\tesseract.exe",
-    r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
-):
-    if os.path.exists(path):
-        pytesseract.pytesseract.tesseract_cmd = path
-        break
+# Tesseract path for Windows only
+if os.name == "nt":
+    pytesseract.pytesseract.tesseract_cmd = (
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    )
 
 
 def format_duration(seconds):
