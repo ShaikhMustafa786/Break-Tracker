@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Break Attendance Calculator</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="wrap">
+<header>
+   <img src="{{ url_for('static', filename='images/Almoh.PNG') }}" alt="Almoh Media Logo" style="width: 200px;">
+  <div>
+
+    <small>OFFICE ATTENDANCE TOOL</small>
+    <h1>Break Attendance Calculator</h1>
+    <p>Upload a screenshot for automatic OCR or paste attendance records manually.</p>
+  </div>
+  <b id="statusBadge" class="badge idle">READY</b>
+</header>
+
+<div class="grid two">
+<section class="card">
+  <div class="title"><h2>01 · Upload Attendance Screenshot</h2><span>OCR AUTO</span></div>
+  <label class="upload" for="imageInput">
+    <input id="imageInput" type="file" accept="image/*">
+    <strong>Choose screenshot</strong>
+    <em>PNG, JPG, JPEG or WEBP</em>
+    <small>OCR starts automatically after upload</small>
+  </label>
+  <div id="previewWrap" class="preview hidden"><img id="preview"></div>
+  <div id="progress" class="progress hidden">Reading screenshot with OCR...</div>
+</section>
+
+<section class="card">
+  <div class="title"><h2>02 · Attendance Input</h2><button id="calculateBtn">Calculate</button></div>
+  <textarea id="attendanceText" placeholder="Example:
+17:58:in(Pune),18:44:out(Pune),19:12:in(Pune),22:00:out(Pune),22:22:in(Pune),22:30:out(Pune),23:23:out(Pune),23:54:in(Pune)"></textarea>
+  <div class="links"><button id="exampleBtn">Load example</button><button id="clearBtn">Clear</button></div>
+</section>
+</div>
+
+<section class="card">
+  <div class="title"><h2>03 · OCR Detected Text</h2><span>RAW OCR OUTPUT</span></div>
+  <textarea id="ocrText" class="ocr" readonly placeholder="Exact OCR detected text will appear here."></textarea>
+</section>
+
+<div class="grid four">
+  <div class="metric"><label>Office IN</label><strong id="officeIn">--:--:--</strong><small id="statusText">Waiting</small></div>
+  <div class="metric"><label>Worked Time</label><strong id="worked">00:00:00</strong><small>Live working duration</small></div>
+  <div class="metric"><label>Total Break</label><strong id="totalBreak">00:00:00</strong><small>Swipe + manual</small></div>
+  <div class="metric highlight"><label>Expected OUT</label><strong id="expectedOut">--:--:--</strong><small id="requiredText">Required: 08:00:00</small></div>
+</div>
+
+<div class="grid two">
+<section class="card">
+  <div class="title"><h2>04 · Work Configuration</h2></div>
+  <div class="formgrid">
+    <label>Required Work Hours<input id="requiredHours" type="number" value="8" min="1" max="24" step=".5"></label>
+    <label>Maximum Break Reference<input value="01:00:00" readonly></label>
+  </div>
+  <div class="info"><b>Formula</b><br>Expected OUT = Office IN + required work + total break.</div>
+</section>
+
+<section class="card">
+  <div class="title"><h2>05 · Manual Break Tracker</h2><span id="manualState">NOT RUNNING</span></div>
+  <div id="manualTimer" class="timer">00:00:00</div>
+  <div class="buttons">
+    <button id="startBreak" class="primary">Start Break</button>
+    <button id="stopBreak" disabled>Stop / Return</button>
+  </div>
+  <div class="manualtotal">Total Manual Break <b id="manualTotal">00:00:00</b></div>
+</section>
+</div>
+
+<section class="card">
+  <div class="title"><h2>06 · Attendance Timeline</h2><span id="recordSummary">0 RECORDS</span></div>
+  <div id="message" class="message hidden"></div>
+  <div id="timeline" class="timeline empty">Upload or paste records to see the timeline.</div>
+</section>
+
+<footer>Break Attendance Calculator · Python + Flask + OCR</footer>
+</div>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
