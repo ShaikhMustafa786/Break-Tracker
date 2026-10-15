@@ -1,26 +1,32 @@
 from flask import Flask, render_template, request, jsonify
-from PIL import Image
+from PIL import Image, ImageOps
 import pytesseract
 import re
 from datetime import datetime
 import os
+import shutil
 
 app = Flask(__name__)
 
-# Tesseract path for Windows only
-if os.name == "nt":
-    pytesseract.pytesseract.tesseract_cmd = (
-        r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# Locate the Tesseract executable.
+# Render/Linux: install the system package during the build.
+# Windows: use TESSERACT_CMD or a common installation path.
+_tesseract_path = os.environ.get("TESSERACT_CMD") or shutil.which("tesseract")
+
+if not _tesseract_path and os.name == "nt":
+    _windows_candidates = [
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+    ]
+    _tesseract_path = next(
+        (path for path in _windows_candidates if os.path.isfile(path)),
+        None,
     )
+
+if _tesseract_path:
+    pytesseract.pytesseract.tesseract_cmd = _tesseract_path
 
 DEFAULT_WORK_SECONDS = 8 * 60 * 60
-
-# Automatically find common Windows Tesseract installations.
-# Tesseract path for Windows only
-if os.name == "nt":
-    pytesseract.pytesseract.tesseract_cmd = (
-        r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-    )
 
 
 def format_duration(seconds):
@@ -198,6 +204,25 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/health/ocr")
+def ocr_health():
+    """Simple diagnostic endpoint to confirm Tesseract is installed."""
+    try:
+        version = pytesseract.get_tesseract_version()
+        return jsonify(
+            status="ok",
+            tesseract_version=str(version),
+            executable=pytesseract.pytesseract.tesseract_cmd,
+        )
+    except Exception as error:
+        app.logger.exception("Tesseract OCR health check failed")
+        return jsonify(
+            status="error",
+            message=str(error),
+            executable=pytesseract.pytesseract.tesseract_cmd,
+        ), 500
+
+
 @app.route("/api/ocr", methods=["POST"])
 def ocr_api():
     if "image" not in request.files:
@@ -206,8 +231,10 @@ def ocr_api():
     if not image_file.filename:
         return jsonify(success=False, message="Please select an image."), 400
     try:
-        image = Image.open(image_file)
-        text = pytesseract.image_to_string(image)
+        # Apply camera orientation metadata and normalize image mode for OCR.
+        with Image.open(image_file) as uploaded_image:
+            image = ImageOps.exif_transpose(uploaded_image).convert("RGB")
+            text = pytesseract.image_to_string(image)
         records = detect_records(text)
         return jsonify(success=True, ocr_text=text, records=records,
                        calculation=calculate_attendance(records))
@@ -233,4 +260,4 @@ def calculate_api():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=False)
